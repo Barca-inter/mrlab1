@@ -40,6 +40,7 @@ func (c *Coordinator) AskForTask(args *AskForTaskInput, reply *AskForTaskReply) 
 		}
 
 	}
+	reply.TaskType = MapFinish
 	return nil
 }
 

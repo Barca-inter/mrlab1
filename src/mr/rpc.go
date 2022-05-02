@@ -17,8 +17,9 @@ import (
 //
 
 const (
-	Map    string = "map"
-	Reduce string = "reduce"
+	Map       string = "map"
+	Reduce    string = "reduce"
+	MapFinish string = "mapFinish"
 )
 
 type ExampleArgs struct {
