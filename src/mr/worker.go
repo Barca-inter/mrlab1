@@ -50,42 +50,51 @@ func Worker(mapf func(string, string) []KeyValue,
 	//向coord申请发放任务
 	for {
 		Reply := AskForTask(workerIndex)
-		switch Reply.TaskType {
-		case Map:
-			//map
-			// intermediate := []KeyValue{}
-			file, err := os.Open(Reply.FileName)
-			if err != nil {
-				log.Fatalf("cannot open %v", Reply.FileName)
-			}
-			content, err := ioutil.ReadAll(file)
-			if err != nil {
-				log.Fatalf("cannot read %v", Reply.FileName)
-			}
-			file.Close()
-			kva := mapf(Reply.FileName, string(content))
-			// intermediate = append(intermediate, kva...)
-
-			sort.Sort(ByKey(kva))
-
-			//以json格式输出中间文件mr-0, mr-1, mr-2...
-			intermediateName := fmt.Sprintf("mr-%d.txt", Reply.FileIndex)
-			ofile, _ := os.Create(intermediateName)
-			enc := json.NewEncoder(ofile)
-			for _, kv := range kva {
-				_ = enc.Encode(&kv)
-			}
-			ofile.Close()
-		case Reduce:
-		case MapFinish:
-			fmt.Printf("MapFinish \n")
-			break
-		default:
+		if err := RunTask(Reply, mapf, reducef); err != nil {
+			log.Fatal("RunTask err:", err)
 		}
+		// InformFinish()
 		time.Sleep(1 * time.Second)
 	}
 }
 
+func RunTask(Reply AskForTaskReply, mapf func(string, string) []KeyValue, reducef func(string, []string) string) error {
+
+	switch Reply.TaskType {
+	case Map:
+		//map
+		// intermediate := []KeyValue{}
+		file, err := os.Open(Reply.FileName)
+		if err != nil {
+			log.Fatalf("cannot open %v", Reply.FileName)
+			return err
+		}
+		content, err := ioutil.ReadAll(file)
+		if err != nil {
+			log.Fatalf("cannot read %v", Reply.FileName)
+			return err
+		}
+		file.Close()
+		kva := mapf(Reply.FileName, string(content))
+		// intermediate = append(intermediate, kva...)
+
+		sort.Sort(ByKey(kva))
+
+		//以json格式输出中间文件mr-0, mr-1, mr-2...
+		intermediateName := fmt.Sprintf("mr-%d.txt", Reply.FileIndex)
+		ofile, _ := os.Create(intermediateName)
+		enc := json.NewEncoder(ofile)
+		for _, kv := range kva {
+			_ = enc.Encode(&kv)
+		}
+		ofile.Close()
+	case Reduce:
+	case MapFinish:
+		fmt.Printf("MapFinish \n")
+		os.Exit(0)
+	}
+	return nil
+}
 func AskForId() int {
 
 	// declare an argument structure.
