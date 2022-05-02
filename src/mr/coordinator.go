@@ -25,7 +25,7 @@ func (c *Coordinator) AskForId(args *AskForIdInput, reply *AskForIdReply) error 
 	len := len(c.workers)
 	reply.WorkerIndex = len
 	c.workers = append(c.workers, strconv.Itoa(len))
-	fmt.Printf("give worker index %v", len)
+	fmt.Printf("give worker index %v\n", len)
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (c *Coordinator) AskForTask(args *AskForTaskInput, reply *AskForTaskReply) 
 
 		for i, file := range c.files {
 			if _, ok := c.MapFile2Task[file]; !ok {
-				fmt.Printf("map file %v to worker %v", file, args.WorkerIndex)
+				fmt.Printf("map file %v to worker %v\n", file, args.WorkerIndex)
 				//将file与worker id关联
 				c.MapFile2Task[file] = args.WorkerIndex
 				//向worker发放map任务，返回文件id以及文件名
@@ -48,7 +48,7 @@ func (c *Coordinator) AskForTask(args *AskForTaskInput, reply *AskForTaskReply) 
 		}
 	} else {
 		//分配完map任务通知worker
-		fmt.Printf("all map task finish")
+		fmt.Printf("all map task finish\n")
 		reply.TaskType = MapFinish
 		os.Exit(0)
 	}
