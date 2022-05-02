@@ -9,6 +9,7 @@ import (
 	"net/rpc"
 	"os"
 	"sort"
+	"time"
 )
 
 // for sorting by key.
@@ -76,8 +77,12 @@ func Worker(mapf func(string, string) []KeyValue,
 			}
 			ofile.Close()
 		case Reduce:
+		case MapFinish:
+			fmt.Printf("MapFinish \n")
+			break
 		default:
 		}
+		time.Sleep(1 * time.Second)
 	}
 }
 
