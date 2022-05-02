@@ -36,7 +36,7 @@ func (c *Coordinator) AskForTask(args *AskForTaskInput, reply *AskForTaskReply) 
 			reply.FileIndex = i
 			reply.FileName = file
 			reply.TaskType = Map
-			break
+			return nil
 		}
 
 	}
