@@ -10,11 +10,17 @@ import (
 	"strconv"
 )
 
+type MapFilesInfo struct {
+	status      string
+	workerIndex *int
+	fileName    string
+}
 type Coordinator struct {
 	// Your definitions here.
-	files            []string
-	nReduce          int
-	MapFile2Task     map[string]int
+	files   []string
+	nReduce int
+
+	MapFilesInfo     []MapFilesInfo
 	workers          []string
 	unFinishedMapCnt int
 }
@@ -34,24 +40,35 @@ func (c *Coordinator) AskForTask(args *AskForTaskInput, reply *AskForTaskReply) 
 	//如果没分配完map任务则继续分配
 	if c.unFinishedMapCnt > 0 {
 
-		for i, file := range c.files {
-			if _, ok := c.MapFile2Task[file]; !ok {
+		for i, file := range c.MapFilesInfo {
+			if file.status == "WAITING" {
 				fmt.Printf("map file %v to worker %v\n", file, args.WorkerIndex)
 				//将file与worker id关联
-				c.MapFile2Task[file] = args.WorkerIndex
+				c.MapFilesInfo[i].status = "MAPPING"
+				c.MapFilesInfo[i].workerIndex = &args.WorkerIndex
+
 				//向worker发放map任务，返回文件id以及文件名
 				reply.FileIndex = i
-				reply.FileName = file
+				reply.FileName = file.fileName
 				reply.TaskType = Map
 				break
 			}
-
 		}
 	} else {
 		//分配完map任务通知worker
 		fmt.Printf("all map task finish\n")
 		reply.TaskType = MapFinish
 		os.Exit(0)
+	}
+	return nil
+}
+
+func (c *Coordinator) InformFinish(args *InformFinishInput, reply *InformFinishReply) error {
+	if args.TaskType == Map {
+		c.unFinishedMapCnt -= 1
+		c.MapFilesInfo[args.FileIndex].status = "FINISHED"
+		c.MapFilesInfo[args.FileIndex].workerIndex = nil
+
 	}
 	return nil
 }
@@ -100,10 +117,15 @@ func (c *Coordinator) Done() bool {
 // nReduce is the number of reduce tasks to use.
 //
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
+	mapFilesInfo := make([]MapFilesInfo, len(files))
+	for i, _ := range mapFilesInfo {
+		mapFilesInfo[i].status = "WAITING"
+		mapFilesInfo[i].fileName = files[i]
+	}
 	c := Coordinator{
 		files:            files,
 		nReduce:          nReduce,
-		MapFile2Task:     map[string]int{},
+		MapFilesInfo:     mapFilesInfo,
 		unFinishedMapCnt: len(files),
 	}
 

@@ -53,7 +53,7 @@ func Worker(mapf func(string, string) []KeyValue,
 		if err := RunTask(Reply, mapf, reducef); err != nil {
 			log.Fatal("RunTask err:", err)
 		}
-		// InformFinish()
+		InformFinish(Reply.TaskType, Reply.FileIndex)
 		time.Sleep(1 * time.Second)
 	}
 }
@@ -95,6 +95,8 @@ func RunTask(Reply AskForTaskReply, mapf func(string, string) []KeyValue, reduce
 	}
 	return nil
 }
+
+//向coord申请worker id
 func AskForId() int {
 
 	// declare an argument structure.
@@ -116,11 +118,7 @@ func AskForId() int {
 	return reply.WorkerIndex
 }
 
-//
-// example function to show how to make an RPC call to the coordinator.
-//
-// the RPC argument and reply types are defined in rpc.go.
-//
+//向coord申请发放任务
 func AskForTask(workerIndex int) AskForTaskReply {
 
 	// declare an argument structure.
@@ -143,6 +141,30 @@ func AskForTask(workerIndex int) AskForTaskReply {
 		fmt.Printf("call failed!\n")
 	}
 	return reply
+}
+
+//向coord通知任务完成
+func InformFinish(TaskType string, FileIndex int) {
+
+	// declare an argument structure.
+	args := InformFinishInput{
+		TaskType:  TaskType,
+		FileIndex: FileIndex,
+	}
+
+	// declare a reply structure.
+	reply := InformFinishReply{}
+
+	// send the RPC request, wait for the reply.
+	// the "Coordinator.Example" tells the
+	// receiving server that we'd like to call
+	// the Example() method of struct Coordinator.
+	ok := call("Coordinator.InformFinish", &args, &reply)
+	if ok {
+		fmt.Printf("reply %v\n", reply)
+	} else {
+		fmt.Printf("call failed!\n")
+	}
 }
 
 //

@@ -49,6 +49,14 @@ type AskForIdReply struct {
 	WorkerIndex int
 }
 
+type InformFinishInput struct {
+	TaskType  string
+	FileIndex int
+}
+
+type InformFinishReply struct {
+}
+
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp, for the coordinator.
 // Can't use the current directory since
