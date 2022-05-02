@@ -1,6 +1,7 @@
 package mr
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -11,10 +12,11 @@ import (
 
 type Coordinator struct {
 	// Your definitions here.
-	files        []string
-	nReduce      int
-	MapFile2Task map[string]int
-	workers      []string
+	files            []string
+	nReduce          int
+	MapFile2Task     map[string]int
+	workers          []string
+	unFinishedMapCnt int
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -23,24 +25,33 @@ func (c *Coordinator) AskForId(args *AskForIdInput, reply *AskForIdReply) error 
 	len := len(c.workers)
 	reply.WorkerIndex = len
 	c.workers = append(c.workers, strconv.Itoa(len))
+	fmt.Printf("give worker index %v", len)
 	return nil
 }
 
 //向worker发放任务
 func (c *Coordinator) AskForTask(args *AskForTaskInput, reply *AskForTaskReply) error {
-	for i, file := range c.files {
-		if _, ok := c.MapFile2Task[file]; !ok {
-			//将file与worker id关联
-			c.MapFile2Task[file] = args.WorkerIndex
-			//向worker发放map任务，返回文件id以及文件名
-			reply.FileIndex = i
-			reply.FileName = file
-			reply.TaskType = Map
-			return nil
-		}
+	//如果没分配完map任务则继续分配
+	if c.unFinishedMapCnt > 0 {
 
+		for i, file := range c.files {
+			if _, ok := c.MapFile2Task[file]; !ok {
+				fmt.Printf("map file %v to worker %v", file, args.WorkerIndex)
+				//将file与worker id关联
+				c.MapFile2Task[file] = args.WorkerIndex
+				//向worker发放map任务，返回文件id以及文件名
+				reply.FileIndex = i
+				reply.FileName = file
+				reply.TaskType = Map
+			}
+
+		}
+	} else {
+		//分配完map任务通知worker
+		fmt.Printf("all map task finish")
+		reply.TaskType = MapFinish
+		os.Exit(0)
 	}
-	reply.TaskType = MapFinish
 	return nil
 }
 
@@ -89,9 +100,10 @@ func (c *Coordinator) Done() bool {
 //
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{
-		files:        files,
-		nReduce:      nReduce,
-		MapFile2Task: map[string]int{},
+		files:            files,
+		nReduce:          nReduce,
+		MapFile2Task:     map[string]int{},
+		unFinishedMapCnt: len(files),
 	}
 
 	// Your code here.
