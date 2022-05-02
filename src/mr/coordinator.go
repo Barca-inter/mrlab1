@@ -42,7 +42,7 @@ func (c *Coordinator) AskForTask(args *AskForTaskInput, reply *AskForTaskReply) 
 
 		for i, file := range c.MapFilesInfo {
 			if file.status == "WAITING" {
-				fmt.Printf("map file %v to worker %v\n", file, args.WorkerIndex)
+				fmt.Printf("map %v file %v to worker %v\n", file.status, file.fileName, args.WorkerIndex)
 				//将file与worker id关联
 				c.MapFilesInfo[i].status = "MAPPING"
 				c.MapFilesInfo[i].workerIndex = &args.WorkerIndex

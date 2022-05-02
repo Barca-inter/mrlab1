@@ -53,6 +53,7 @@ func Worker(mapf func(string, string) []KeyValue,
 		if err := RunTask(Reply, mapf, reducef); err != nil {
 			log.Fatal("RunTask err:", err)
 		}
+		fmt.Printf("Finish task: %v %v\n", Reply.TaskType, Reply.FileName)
 		InformFinish(Reply.TaskType, Reply.FileIndex)
 		time.Sleep(1 * time.Second)
 	}
@@ -111,7 +112,7 @@ func AskForId() int {
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.AskForId", &args, &reply)
 	if ok {
-		fmt.Printf("reply %v\n", reply)
+		fmt.Printf("Get worker index: %v \n", reply.WorkerIndex)
 	} else {
 		fmt.Printf("call failed!\n")
 	}
@@ -136,7 +137,7 @@ func AskForTask(workerIndex int) AskForTaskReply {
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.AskForTask", &args, &reply)
 	if ok {
-		fmt.Printf("reply %v\n", reply)
+		fmt.Printf("Get task: %v %v \n", reply.TaskType, reply.FileName)
 	} else {
 		fmt.Printf("call failed!\n")
 	}
@@ -155,14 +156,8 @@ func InformFinish(TaskType string, FileIndex int) {
 	// declare a reply structure.
 	reply := InformFinishReply{}
 
-	// send the RPC request, wait for the reply.
-	// the "Coordinator.Example" tells the
-	// receiving server that we'd like to call
-	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.InformFinish", &args, &reply)
-	if ok {
-		fmt.Printf("reply %v\n", reply)
-	} else {
+	if !ok {
 		fmt.Printf("call failed!\n")
 	}
 }
